@@ -1,3 +1,11 @@
+hyper-kvasir-hoover.json
+datasets
+*.out
+results
+checkpoints
+readme_temp.txt
+release_model
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

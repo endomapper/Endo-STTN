@@ -59,7 +59,7 @@ def main_worker(rank, config):
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"]="1" #added by Rema to choose only one GPU
+    os.environ["CUDA_VISIBLE_DEVICES"]="7" #added by Rema to choose only one GPU
     # loading configs
     config = json.load(open(args.config))
     config['model'] = args.model
