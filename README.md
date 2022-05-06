@@ -84,6 +84,19 @@ python test.py --output datasets/EndoSTTN_dataset-Testing/Inpaintedframes/ --fra
 
 <!-- ---------------------------------------------- -->
 ## Dataset Preparation
+Our dataset is based on the Hyper Kvasir dataset, please also cite it if used:
+```
+@article{borgli2020hyperkvasir,
+  title={HyperKvasir, a comprehensive multi-class image and video dataset for gastrointestinal endoscopy},
+  author={Borgli, Hanna and Thambawita, Vajira and Smedsrud, Pia H and Hicks, Steven and Jha, Debesh and Eskeland, Sigrun L and Randel, Kristin Ranheim and Pogorelov, Konstantin and Lux, Mathias and Nguyen, Duc Tien Dang and others},
+  journal={Scientific data},
+  volume={7},
+  number={1},
+  pages={1--14},
+  year={2020},
+  publisher={Nature Publishing Group}
+}
+```
 To use our dataset, either:
 1. To download our dataset:
     - Download it from ([Dataset](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucabrd0_ucl_ac_uk/EoyhTw5vdQBHr8-r-Iv-XfcB5E_88GkMuEddnRVKxwfQKQ?e=XBY9Dg))
