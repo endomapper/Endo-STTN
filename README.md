@@ -18,7 +18,10 @@ If any part of our paper and repository is helpful to your work, please generous
   journal={arXiv preprint arXiv:2203.17013},
   year={2022}
 }
+```
 
+Since this code is based on [STTN](https://github.com/researchmm/STTN), please also cite their work: 
+```
 @inproceedings{yan2020sttn,
   author = {Zeng, Yanhong and Fu, Jianlong and Chao, Hongyang,
   title = {Learning Joint Spatial-Temporal Transformations for Video Inpainting},
