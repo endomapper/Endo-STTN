@@ -45,6 +45,10 @@ class ZipReader(object):
             file_dict[path] = file_handle
             return file_dict[path]
 
+    def filelist(path):
+        zfile = ZipReader.build_file_dict(path)
+        return zfile.namelist()
+
     @staticmethod
     def imread(path, image_name):
         zfile = ZipReader.build_file_dict(path)

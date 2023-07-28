@@ -1,4 +1,5 @@
 {
+    "gpu": "6,7",
     "seed": 2020,
     "save_dir": "release_model/",
     "data_loader": {
@@ -6,7 +7,9 @@
         "data_root": "datasets/",
         "w": 288,
         "h": 288,
-        "sample_length": 5
+        "sample_length": 5,
+        "Dil": 8,
+        "frame_limit": 927
     },
     "losses": {
         "hole_weight": 1,

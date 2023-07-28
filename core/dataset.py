@@ -22,6 +22,8 @@ from core.utils import Stack, ToTorchFormatTensor, GroupRandomHorizontalFlip
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, args: dict, split='train', debug=False):
         self.args = args
+        self.Dil=args['Dil']
+        self.args = args
         self.split = split
         self.sample_length = args['sample_length']
         self.size = self.w, self.h = (args['w'], args['h'])
@@ -30,7 +32,7 @@ class Dataset(torch.utils.data.Dataset):
             self.video_dict = json.load(f)
         self.video_names = list(self.video_dict.keys())
         if debug or split != 'train':
-            self.video_names = self.video_names[:100]
+            self.video_names = self.video_names #[:100]
 
         self._to_tensors = transforms.Compose([
             Stack(),
@@ -50,7 +52,10 @@ class Dataset(torch.utils.data.Dataset):
 
     def load_item(self, index):
         video_name = self.video_names[index]
-        all_frames = [f"{str(i).zfill(5)}.jpg" for i in range(self.video_dict[video_name])]
+        if 'frame_limit' in self.args:
+            all_frames = [f"{str(i).zfill(5)}.jpg" for i in range(min(self.video_dict[video_name],self.args['frame_limit']))]
+        else:
+            all_frames = [f"{str(i).zfill(5)}.jpg" for i in range(self.video_dict[video_name])]
 #         all_masks = create_random_shape_with_random_motion(
 #             len(all_frames), imageHeight=self.h, imageWidth=self.w) #removed by rema to add our own masks
         ref_index = get_ref_index(len(all_frames), self.sample_length)
@@ -58,20 +63,24 @@ class Dataset(torch.utils.data.Dataset):
         frames = []
         masks = []
         for idx in ref_index:
+            zfilelist = ZipReader.filelist('{}/{}/JPEGImages/{}.zip'.format(
+                self.args['data_root'], self.args['name'], video_name)) #used since all_frames counts from 0 whereas zfilelist checks the correct naming of files
             img = ZipReader.imread('{}/{}/JPEGImages/{}.zip'.format(
-                self.args['data_root'], self.args['name'], video_name), all_frames[idx]).convert('RGB')
+                self.args['data_root'], self.args['name'], video_name), zfilelist[idx]).convert('RGB')
             img = img.resize(self.size)
             frames.append(img)
 #             masks.append(all_masks[idx]) #Rema removed to add our own masks
 
             #Added by Rema to add our own masks
             m = ZipReader.imread('{}/{}/Annotations/{}.zip'.format(
-                self.args['data_root'], self.args['name'], video_name), all_frames[idx]).convert('RGB')
+                self.args['data_root'], self.args['name'], video_name), zfilelist[idx]).convert('RGB')
             m = m.resize(self.size)
             m = np.array(m.convert('L'))
             m = np.array(m > 199).astype(np.uint8) #Rema:from 0 to 199 changes to binary better
-            m = cv2.dilate(m, cv2.getStructuringElement(
-                cv2.MORPH_ELLIPSE, (8, 8)), iterations=1) #Rema:Dilate only 1 iteration change 3,3 to 55(tried it in quantifyResults.ipyb
+            if self.Dil !=0:
+                m = cv2.dilate(m, cv2.getStructuringElement(
+                    cv2.MORPH_ELLIPSE, (self.Dil,self.Dil)), iterations=1) #Rema:Dilate only 1 iteration change 3,3 to 55(tried it in quantifyResults.ipyb
+           
             erase=m
             M = np.float32([[1,0,50],[0,1,0]])
             m = cv2.warpAffine(m,M,self.size)

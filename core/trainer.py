@@ -25,6 +25,8 @@ import torch.distributed as dist
 
 from core.dataset import Dataset
 from core.loss import AdversarialLoss
+import sys
+epsilon=sys.float_info.epsilon
 
 
 class Trainer():
@@ -73,8 +75,8 @@ class Trainer():
             self.netD.parameters(), 
             lr=config['trainer']['lr'],
             betas=(self.config['trainer']['beta1'], self.config['trainer']['beta2']))
-        self.load()
         self.load_initialmodel() #added by Rema for loading initializing model
+        self.load()
 
         if config['distributed']:
             self.netG = DDP(
@@ -165,11 +167,11 @@ class Trainer():
                 self.config['initialmodel'], 'latest.ckpt'), 'r').read().splitlines()[-1]
             if latest_epoch is not None:
                 gen_path = os.path.join(
-                    self.config['initialmodel'], 'gen_{}.pth'.format(str(latest_epoch).zfill(5)))
+                    self.config['initialmodel'], 'gen_{}.pth'.format((self.config['chosen_epoch']).zfill(5)))
                 dis_path = os.path.join(
-                    self.config['initialmodel'], 'dis_{}.pth'.format(str(latest_epoch).zfill(5)))
+                    self.config['initialmodel'], 'dis_{}.pth'.format((self.config['chosen_epoch']).zfill(5)))
                 opt_path = os.path.join(
-                    self.config['initialmodel'], 'opt_{}.pth'.format(str(latest_epoch).zfill(5)))
+                    self.config['initialmodel'], 'opt_{}.pth'.format((self.config['chosen_epoch']).zfill(5)))
                 if self.config['global_rank'] == 0:
                     print('Loading model from {}...'.format(gen_path))
                 data = torch.load(gen_path, map_location=self.config['device'])
@@ -278,13 +280,13 @@ class Trainer():
 
             # generator l1 loss
             hole_loss = self.l1_loss(pred_img*masks, frames*masks)
-            hole_loss = hole_loss / torch.mean(masks) * self.config['losses']['hole_weight']
+            hole_loss = hole_loss / max(torch.mean(masks), epsilon) * self.config['losses']['hole_weight']
             gen_loss += hole_loss 
             self.add_summary(
                 self.gen_writer, 'loss/hole_loss', hole_loss.item())
 
             valid_loss = self.l1_loss(pred_img*(1-masks), frames*(1-masks))
-            valid_loss = valid_loss / torch.mean(1-masks) * self.config['losses']['valid_weight']
+            valid_loss = valid_loss / max(torch.mean(1-masks), epsilon) * self.config['losses']['valid_weight']
             gen_loss += valid_loss 
             self.add_summary(
                 self.gen_writer, 'loss/valid_loss', valid_loss.item())

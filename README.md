@@ -59,31 +59,6 @@ conda env create -f environment.yml
 conda activate sttn
 ```
 
-<!-- ---------------------------------------------- -->
-## Completing Videos Using Pretrained Model
-
-The inpainted frames can be generated using pretrained models. 
-For your reference, we provide our model in ([pretrained model](https://liveuclac-my.sharepoint.com/:u:/g/personal/ucabrd0_ucl_ac_uk/ERzrr0GgtLVGrJhxLvYS6_ABt19Iva2d0x7ijouWyo1Vog?e=IQwlJf)). 
-
-Use a similar pipeline to [Dataset Preparation](#dataset-preparation) to create the following folders with only the testing sequences:
-  ```
-  datasets
-    |- EndoSTTN_dataset-Testing
-          |- JPEGImages-Testing
-            |- <video_id>.zip
-            |- <video_id>.zip
-          |- Annotations-Testing
-            |- <video_id>.zip
-            |- <video_id>.zip        
-  ``` 
-    
-Complete frames using the pretrained model. For example, 
-
-```
-python test.py --output <<INSERT OUTPUT DIR>> --frame <<INSERT DIR OF JPEGImages>> --mask <<INSERT DIR OF Annotations>> --ckpt pretrained/gen_00009.pth
-python test.py --output datasets/EndoSTTN_dataset-Testing/Inpaintedframes/ --frame datasets/EndoSTTN_dataset-Testing/JPEGImages-Testing/ --mask Annotations-Testing/ --ckpt pretrained/gen_00009.pth
-``` 
-
 
 <!-- ---------------------------------------------- -->
 ## Dataset Preparation
@@ -100,7 +75,7 @@ Our dataset is based on the Hyper Kvasir dataset, please also cite it if used:
   publisher={Nature Publishing Group}
 }
 ```
-To use our dataset, either:
+
 1. To download our dataset:
     - Download it from ([Dataset](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucabrd0_ucl_ac_uk/EoyhTw5vdQBHr8-r-Iv-XfcB5E_88GkMuEddnRVKxwfQKQ?e=XBY9Dg))
     - Place it in folder datasets
@@ -118,17 +93,17 @@ To use our dataset, either:
             |- test.json 
             |- train.json 
     ``` 
-    train.json includes video ids to be used for training with their number of frames:
+    train.json includes video IDs to be used for training with their number of frames:
     {"video_id": 1982,
     "video_id": 3509,
     "video_id": 1569}
 
-    test.json includes video ids to be used for testing with their number of frames:
+    test.json includes video IDs to be used for testing with their number of frames:
     {"video_id": 1982,
     "video_id": 3509,
     "video_id": 1569}                 
 
-2. To create dataset from scratch:
+2. To create your dataset from scratch use this Hyper Kvasir example:
     ```
     cd dataset_prep
     ```
@@ -146,9 +121,21 @@ To use our dataset, either:
     python rename.py
     python video2frames.py
     python resizeFrames288.py
+    python folder_dicts.py
     ```
-    - To get the specular highlight masks we rely on the code of ([Github Repo](https://github.com/jiemojiemo/some_specular_detection_and_inpainting_methods_for_endoscope_image/tree/master/Automatic_detection_and_Inpainting_of_specular_reflections_Othmane_2011)):
-      - In Matlab run ([createSpecularMasks288.m](./Automatic_detection_and_Inpainting_of_specular_reflections_Othmane_2011/))
+    - From "train.json", move the video IDs that are selected for testing with their frame count to a similar file "test.json".
+    
+      - train.json includes video IDs to be used for training with their number of frames:
+    {"video_id": 1982,
+    "video_id": 3509,
+    "video_id": 1569}
+
+      - test.json includes video IDs to be used for testing with their number of frames:
+    {"video_id": 1982,
+    "video_id": 3509,
+    "video_id": 1569} 
+    - To get the specular highlight masks we rely on the following code ([Github Repo](https://github.com/jiemojiemo/some_specular_detection_and_inpainting_methods_for_endoscope_image/tree/master/Automatic_detection_and_Inpainting_of_specular_reflections_Othmane_2011)):
+      - In Matlab run ([createSpecularMasks288.m](./Automatic_detection_and_Inpainting_of_specular_reflections_Othmane_2011/createSpecularMasks288.m))
     - Run zipper.sh inside Frames and Annotations in labeled-videos-Processed/Resized/ to zip the video folders inside them.
     - Move and rename Frames and Annotations in labeled-videos-Processed/Resized/ to the datasets folder to look like this:
     ```
@@ -163,29 +150,106 @@ To use our dataset, either:
             |- test.json 
             |- train.json 
     ``` 
-    train.json includes video ids to be used for training with their number of frames:
-    {"video_id": 1982,
-    "video_id": 3509,
-    "video_id": 1569}
 
-    test.json includes video ids to be used for testing with their number of frames:
-    {"video_id": 1982,
-    "video_id": 3509,
-    "video_id": 1569} 
 
+<!-- ---------------------------------------------- -->
+## Inpaint Videos Using Pretrained Model
+
+The inpainted frames can be generated using pretrained models. 
+For your reference, we provide our model in ([pretrained model](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucabrd0_ucl_ac_uk/ErDBwVttNuxKkWXG7nLsnQcBMxCrbWaRhpUBGEEQ_JE_ew?e=Nj4vwD)):
+- Download and unzip the file in the release_model/ folder.
+
+### Testing script:
+
+1. Arguments that can be set with test.py:
+    - --overlaid: used to overlay the original frame pixels outside the mask region on your output. 
+    - --shifted to inpaint using a shifted mask.
+    - --framelimit used to set the maximum number of frames per video (Default = 927).
+    - --Dil used to set the size of structuring element used for dilation (Default = 8). If set to 0, no dilation will be made.
+
+<br />
+
+2. To test on all the videos listed in your test.json:
+    ```
+    python test.py --gpu <<INSERT GPU INDEX>> --overlaid \
+    --output <<INSERT OUTPUT DIR>> \
+    --frame <<INSERT JPEGImages DIR>> \
+    --mask <<INSERT ANNOTATIONS DIR>> \
+    --c <<INSERT PRETRAINED PARENT DIR>> \
+    --cn <<INSERT PRETRAINED MODEL NUMBER>> \
+    --zip
+    ``` 
+
+    - For example, using pretrained model release_model/pretrained_model/gen_00009.pth: 
+      ```
+      python test.py --gpu 1 --overlaid \
+      --output results/Inpainted_pretrained_gen9/ \
+      --frame datasets/EndoSTTN_dataset/JPEGImages/ \
+      --mask datasets/EndoSTTN_dataset/Annotations/ \
+      --c release_model/pretrained_model/ \
+      --cn 9 \
+      --zip
+      ```
+
+3. To test on 1 video: 
+    ```
+    python test.py --gpu <<INSERT GPU INDEX>> --overlaid \
+    --output <<INSERT VIDEO OUTPUT DIR>> \
+    --frame <<INSERT VIDEO FRAMES DIR>> \
+    --mask <<INSERT VIDEO ANNOTATIONS DIR>> \
+    --c <<INSERT PRETRAINED PARENT DIR>> \
+    --cn <<INSERT PRETRAINED MODEL NUMBER>>
+    ``` 
+
+    - For example, for a folder "ExampleVideo1_Frames" containing the video frames, using pretrained model release_model/pretrained_model/gen_00009.pth: 
+
+      ``` 
+      python test.py  --gpu 1 --overlaid \
+      --output results/Inpainted_pretrained_gen9/ExampleVideo1_Inpainted/ \
+      --frame datasets/ExampleVideo1_Frames/ \
+      --mask datasets/ExampleVideo1_Annotations/ \
+      --c release_model/pretrained_model/ \
+      --cn 9
+      ``` 
+
+4. Single frame testing:
+
+    To test a single frame at a time and thus removing the temporal component, follow the same steps above but use **test-singleframe.py** instead of **test.py**.
 
 <!-- ---------------------------------------------- -->
 ## Training New Models
 Once the dataset is ready, new models can be trained:
-- Remove this in train.py if not needed (used to choose only one GPU):    ```os.environ["CUDA_VISIBLE_DEVICES"]="7"``` 
-- In the config file:
+- Prepare the configuration file (ex: [EndoSTTN_dataset.json](./configs/EndoSTTN_dataset.json)):
+  - "gpu": \<INSERT GPU INDICES EX: "1,2"\>
   - "data_root": \<INSERT DATASET ROOT\>
   - "name": \<INSERT NAME OF DATASET FOLDER\>
-- Use --initialmodel to initialize your model with a pretrained one (in this example the pretrained model is called sttn_EndoSTTN_dataset)
+  - "frame_limit": used to set the maximum number of frames per video (Default = 927).
+  - "Dil": used to set the size of structuring element used for dilation (Default = 8). If set to 0, no dilation will be made.
 
-```
-python train.py --config configs/EndoSTTN_dataset.json --model sttn --initialmodel release_model/sttn_EndoSTTN_dataset/
-```
+ <br />
+
+- train.py will be used for training:
+
+  ```
+  python test.py --gpu <<INSERT GPU INDEX>> --overlaid \
+  --config <<INSERT CONFIG FILE DIR>> \
+  --c <<INSERT INITIALIZATION MODEL PARENT DIR>> \
+  --cn <<INSERT INITIALIZATION MODEL NUMBER>>
+  ```
+  - For example, using pretrained model release_model/pretrained_model/gen_00009.pth as initialization: 
+    ```
+    python train.py --model sttn \
+    --config configs/EndoSTTN_dataset.json \
+    --c release_model/pretrained_model/ \
+    --cn 9
+    ```
+
+
+<!-- ---------------------------------------------- -->
+## Evaluation 
+To quantitatively evaluate results using pseudo-ground-truth:
+1. Test all videos using [Testing Script (2.)](#testing-script) and adding the **--shifted** argument.
+2. Use [quantifyResults.ipynb](./quantifyResults.ipynb) to generate csv files containing the quantitative results.
 
 
 <!-- ---------------------------------------------- -->

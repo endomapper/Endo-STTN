@@ -1,30 +1,17 @@
 # -*- coding: utf-8 -*-
 import cv2
-import matplotlib.pyplot as plt
 from PIL import Image
 import numpy as np
-import math
 import time
 import importlib
 import os
 import argparse
-import copy
-import datetime
-import random
-import sys
 import json
 import pathlib
 
 import torch
-from torch.autograd import Variable
-
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.nn.init as init
-import torch.utils.model_zoo as model_zoo
-from torchvision import models
-import torch.multiprocessing as mp
 from torchvision import transforms
+from core.utils import ZipReader
 
 # My libs
 from core.utils import Stack, ToTorchFormatTensor
@@ -32,14 +19,22 @@ from core.utils import Stack, ToTorchFormatTensor
 
 parser = argparse.ArgumentParser(description="STTN")
 parser.add_argument("-f", "--frame", type=str, required=True)
-parser.add_argument("-o", "--output",   type=str, required=True)
-parser.add_argument("-m", "--mask",   type=str, required=True)
-parser.add_argument("-c", "--ckpt",   type=str, required=True)
-parser.add_argument("--model",   type=str, default='sttn')
+parser.add_argument("-o", "--output", type=str, required=True)
+parser.add_argument("-m", "--mask", type=str, required=True)
+parser.add_argument("-c", "--ckptpath", type=str, required=True)
+parser.add_argument("-cn", "--ckptnumber", type=str, required=True)
+parser.add_argument("--model", type=str, default='sttn')
+parser.add_argument("--shifted", action='store_true')
+parser.add_argument("--overlaid", action='store_true')
+parser.add_argument("--famelimit", type=int, default=927, description="Limit the number of frames to be processed")
+parser.add_argument("--zip", action='store_true')
+parser.add_argument("-g", "--gpu", type=str, default="7", required=True)
+parser.add_argument("-d", "--Dil", type=int, default=8)
+
+
 args = parser.parse_args()
 
 
-# w, h = 288, 288
 ref_length = 10
 neighbor_stride = 5
 default_fps = 24
@@ -65,11 +60,17 @@ def read_mask(mpath):
     mnames.sort()
     for m in mnames: 
         m = Image.open(os.path.join(mpath, m))
-#         m = m.resize((w, h), Image.NEAREST)
+        sz=m.size
         m = np.array(m.convert('L'))
         m = np.array(m > 199).astype(np.uint8) #Rema:from 0 to 199 changes to binary better
-        m = cv2.dilate(m, cv2.getStructuringElement(
-            cv2.MORPH_ELLIPSE, (8, 8)), iterations=1) #Rema:Dilate only 1 iteration
+        if args.Dil !=0:
+            m = cv2.dilate(m, cv2.getStructuringElement(
+                cv2.MORPH_ELLIPSE, (args.Dil, args.Dil)), iterations=1) #Rema:Dilate only 1 iteration
+        if args.shifted:
+            M = np.float32([[1,0,50],[0,1,0]])
+            m_T = cv2.warpAffine(m,M,sz)  
+            m_T[m!=0]=0
+            m = np.copy(m_T)
         masks.append(Image.fromarray(m*255))
     return masks
 
@@ -89,27 +90,52 @@ def read_frames(fpath):
         frames.append(f)
     return frames, fnames
 
+def read_frames_mask_zip(fpath):
+    frames = {}
+    masks = {}
+    fnames = {}
+    with open(os.path.join(fpath.split("JPEGImages")[0], 'test.json'), 'r') as f:
+        video_dict = json.load(f)
+    video_names = list(video_dict.keys())
+    for video_name in video_names: #[:1]:
+        frames_v = []
+        masks_v = []       
+        zfilelist = ZipReader.filelist("{}/{}.zip".format(
+            fpath, video_name)) #used since all_frames counts from 0 whereas zfilelist checks the correct naming of files
+        fnames[video_name]=zfilelist
+        for zfile in zfilelist: #[:100]:
+            img = ZipReader.imread('{}/{}.zip'.format(
+                fpath, video_name), zfile).convert('RGB')
+            frames_v.append(img)
+            m = ZipReader.imread('{}/{}.zip'.format(
+                fpath.split("JPEGImages")[0]+"Annotations", video_name), zfile).convert('RGB')
+            sz=m.size
+            m = np.array(m.convert('L'))
+            m = np.array(m > 199).astype(np.uint8) #Rema:from 0 to 199 changes to binary better
+            if args.Dil !=0:
+                m = cv2.dilate(m, cv2.getStructuringElement(
+                    cv2.MORPH_ELLIPSE, (args.Dil, args.Dil)), iterations=1) #Rema:Dilate only 1 iteration change 3,3 to 55(tried it in quantifyResults.ipyb
+            if args.shifted:
+                M = np.float32([[1,0,50],[0,1,0]])
+                m_T = cv2.warpAffine(m,M,sz)  
+                m_T[m!=0]=0
+                m = np.copy(m_T)
+            all_mask=Image.fromarray(m*255)
+            masks_v.append(all_mask)
+        frames[video_name]=frames_v
+        masks[video_name]=masks_v
+        print(video_name)
+        
+    return frames, fnames, masks, video_names, sz
 
-def main_worker():
-    # set up models 
-    device = torch.device("cuda:3" if torch.cuda.is_available() else "cpu")
-    net = importlib.import_module('model.' + args.model)
-    model = net.InpaintGenerator().to(device)
-    model_path = args.ckpt
-    data = torch.load(args.ckpt, map_location=device)
-    model.load_state_dict(data['netG'])
-    print('loading from: {}'.format(args.ckpt))
-    model.eval()
+def evaluate(w, h, frames, fnames, masks, video_name, model, device, overlaid, shifted, Dil):
 
-    # prepare datset, encode all frames into deep space 
-    frames, fnames = read_frames(args.frame)
-    w, h=frames[0].size
-    masks = read_mask(args.mask)
-    
+
+
     #added for memory issue
-    if len(frames)>927:
-        masks=masks[:927]
-        frames=frames[:927]
+    if len(frames)>args.famelimit:
+        masks=masks[:args.famelimit]
+        frames=frames[:args.famelimit]
   
     video_length = len(frames)
     feats = _to_tensors(frames).unsqueeze(0)*2-1
@@ -141,27 +167,107 @@ def main_worker():
             pred_img = pred_img.cpu().permute(0, 2, 3, 1).numpy()*255
             for i in range(len(neighbor_ids)):
                 idx = neighbor_ids[i]
+                if args.overlaid:
+                    overlay_mult=binary_masks[idx]
+                    overlay_add=frames[idx] * (1-binary_masks[idx])
+                else:
+                    overlay_mult=1
+                    overlay_add=0
                 img = np.array(pred_img[i]).astype(
-                    np.uint8)*binary_masks[idx] + frames[idx] * (1-binary_masks[idx])
+                    np.uint8)*overlay_mult+overlay_add
                 if comp_frames[idx] is None:
                     comp_frames[idx] = img
                 else:
                     comp_frames[idx] = comp_frames[idx].astype(
                         np.float32)*0.5 + img.astype(np.float32)*0.5
                     #Rema:
-    pathlib.Path(f"{args.output}").mkdir(exist_ok=True)
-    writer = cv2.VideoWriter(f"{args.output}/result.mp4", cv2.VideoWriter_fourcc(*"mp4v"), default_fps, (w, h))
+    savebasepath=os.path.join(args.output,"gen_"+args.ckptnumber.zfill(5),video_name, overlaid, shifted, Dil)
+    frameresultpath=os.path.join(savebasepath,"frameresult")
+    pathlib.Path(frameresultpath).mkdir(parents=True, exist_ok=True)
+    writer = cv2.VideoWriter(savebasepath+"/result.mp4", cv2.VideoWriter_fourcc(*"mp4v"), default_fps, (w, h))
     for f in range(video_length):
+        if args.overlaid:
+            overlay_mult=binary_masks[f]
+            overlay_add=frames[f] * (1-binary_masks[f])
+        else:
+            overlay_mult=1
+            overlay_add=0
         comp = np.array(comp_frames[f]).astype(
-            np.uint8)*binary_masks[f] + frames[f] * (1-binary_masks[f])
-        pathlib.Path(f"{args.output}/frameresult/").mkdir(exist_ok=True)
+            np.uint8)*overlay_mult+overlay_add
         fnameNew=os.path.basename(fnames[f])
-        cv2.imwrite(f"{args.output}/frameresult/{fnameNew}",cv2.cvtColor(np.array(comp).astype(np.uint8), cv2.COLOR_BGR2RGB))
+        cv2.imwrite(frameresultpath+f"/{fnameNew}",cv2.cvtColor(np.array(comp).astype(np.uint8), cv2.COLOR_BGR2RGB))
         writer.write(cv2.cvtColor(np.array(comp).astype(np.uint8), cv2.COLOR_BGR2RGB))
     writer.release()
-    print('Finish in {}'.format(f"{args.output}/result.mp4"))
+    print('Finish in {}'.format(savebasepath+"/result.mp4"))
 
+def main_worker():
+    overlaid="overlaid" if args.overlaid else "notoverlaid"
+    shifted="shifted" if args.shifted else "notshifted"
+    Dil = "noDil" if args.Dil == 0 else ""
+    # set up models 
+    device = torch.device("cuda:"+args.gpu if torch.cuda.is_available() else "cpu")
+    net = importlib.import_module('model.' + args.model)
+    
 
+    model = net.InpaintGenerator().to(device)
+    model_path = os.path.join(args.ckptpath,"gen_"+args.ckptnumber.zfill(5)+".pth")
+    data = torch.load(model_path, map_location=device)
+    model.load_state_dict(data['netG'])
+    print('loading from: {}'.format(args.ckptpath))
+    model.eval()
+    
+    if args.zip:
+        file1 = os.path.join(args.frame.split("JPEGImages")[0], 'files/testframes_v.npy') # 'files/frames_v.npy')
+        file2 = os.path.join(args.frame.split("JPEGImages")[0], 'files/testfnames_v.npy') # 'files/fnames_v.npy')
+        file3 = os.path.join(args.frame.split("JPEGImages")[0], 'files/testmasks_v.npy') # 'files/masks_v.npy')
+        file4 = os.path.join(args.frame.split("JPEGImages")[0], 'files/testvideo_names.npy') # 'files/video_names.npy')
+        file5 = os.path.join(args.frame.split("JPEGImages")[0], 'files/testsz.npy') # 'files/sz.npy')
+        file1Ex = os.path.isfile(file1)
+        file2Ex = os.path.isfile(file2)
+        file3Ex = os.path.isfile(file3)
+        file4Ex = os.path.isfile(file4)
+        file5Ex = os.path.isfile(file5)
 
+        if file1Ex and file2Ex and file3Ex and file4Ex and file5Ex:
+            # start timer
+            start = time.time()
+            frames_v = np.load(file1, allow_pickle='TRUE').item()
+            # end timer
+            end = time.time()
+            print("frames_v loaded")
+            print(f"Time taken to load frames_v: {end - start} seconds") 
+            fnames_v = np.load(file2, allow_pickle='TRUE').item()
+            print("fnames_v loaded")
+            masks_v = np.load(file3, allow_pickle='TRUE').item()
+            print("masks_v loaded")
+            video_names = np.load(file4, allow_pickle='TRUE')
+            print("video_names loaded")
+            sz = np.load(file5, allow_pickle='TRUE')
+            print("sz loaded")
+            print("files loaded...")
+        else:
+            os.makedirs(os.path.join(args.frame.split("JPEGImages")[0], 'files'), exist_ok=True)
+            frames_v, fnames_v, masks_v, video_names, sz = read_frames_mask_zip(args.frame)
+            np.save(file1, frames_v) 
+            np.save(file2, fnames_v) 
+            np.save(file3, masks_v) 
+            np.save(file4, video_names) 
+            np.save(file5, sz) 
+
+        w, h = sz
+        for video_name in video_names:
+            frames = frames_v[video_name]
+            fnames = fnames_v[video_name]
+            masks = masks_v[video_name]
+            evaluate(w, h, frames, fnames, masks, video_name, model, device, overlaid, shifted, Dil)
+    else:
+        # prepare datset, encode all frames into deep space 
+        video_name=os.path.basename(args.frame.rstrip("/"))
+        frames, fnames = read_frames(args.frame)
+        w, h=frames[0].size
+        masks = read_mask(args.mask)
+        evaluate(w, h, frames, fnames, masks, video_name, model, device, overlaid, shifted, Dil)
+     
+  
 if __name__ == '__main__':
     main_worker()

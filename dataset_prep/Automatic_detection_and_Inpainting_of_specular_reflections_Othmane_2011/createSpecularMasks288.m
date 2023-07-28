@@ -7,10 +7,10 @@ cd './Automatic_detection_and_Inpainting_of_specular_reflections_Othmane_2011/'
 addpath ./lib
 
 %ADD FILEPATH HERE
-D=dir('../labeled-videos-Processed/Resized/Frames/hyperK*/')
+D=dir('./labeled-videos-Processed/Resized/Frames/hyperK*/')
 
 for j = 1:length(D)
-    folderD=fullfile('../labeled-videos-Processed/Resized/Frames/',D(j).name)
+    folderD=fullfile('./labeled-videos-Processed/Resized/Frames/',D(j).name)
     D2=dir(fullfile(folderD,'*.jpg'))
     for k = 1:length(D2)
 	img_path=fullfile(folderD,D2(k).name);

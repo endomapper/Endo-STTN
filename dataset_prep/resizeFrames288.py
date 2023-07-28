@@ -19,7 +19,7 @@ for foldername in  glob.glob(BaseDir+"Frames/*"):
         print ('Error: Creating directory of Frames')
 print("done creating directories")
 
-for foldername in  glob.glob(BaseDir+"Frames/*")[236:]:
+for foldername in  glob.glob(BaseDir+"Frames/*"):
     print(foldername)
     for filename in  glob.glob(foldername+"/*"):
         # print(filename)
@@ -31,10 +31,10 @@ for foldername in  glob.glob(BaseDir+"Frames/*")[236:]:
         wrem=width-sides
     
         # Resizing the images
-        imCrop=img[hrem/2:height-hrem/2,wrem/2:width-wrem/2]
+        imCrop=img[int(hrem/2):int(height-hrem/2),int(wrem/2):int(width-wrem/2),:]
         imResize=cv2.resize(imCrop, (576,576))
         Nsiz=576-448
-        im448=imResize[Nsiz/2:576-Nsiz/2,Nsiz/2:576-Nsiz/2]
+        im448=imResize[int(Nsiz/2):int(576-Nsiz/2),int(Nsiz/2):int(576-Nsiz/2),:]
         imRes=cv2.resize(im448, (288,288))
         # writing images to new folder
         ResizeName=filename.split("Frames/")[1]

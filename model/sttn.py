@@ -129,6 +129,8 @@ class deconv(nn.Module):
                               kernel_size=kernel_size, stride=1, padding=padding)
 
     def forward(self, x):
+        if len(x.shape) == 3:
+            x = x.unsqueeze(0)
         x = F.interpolate(x, scale_factor=2, mode='bilinear',
                           align_corners=True)
         return self.conv(x)

@@ -1,12 +1,13 @@
 readme.txt
 hyper-kvasir-hoover.json
 hyper-kvasir-transfer2-TransMask.json
-datasets
 *.out
 results
 checkpoints
 readme_temp.txt
-release_model
+release_model/*
+*.swp
+old_scripts
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

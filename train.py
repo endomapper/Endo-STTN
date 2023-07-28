@@ -21,7 +21,8 @@ parser.add_argument('-c', '--config', default='configs/youtube-vos.json', type=s
 parser.add_argument('-m', '--model', default='sttn', type=str)
 parser.add_argument('-p', '--port', default='23455', type=str)
 parser.add_argument('-e', '--exam', action='store_true')
-parser.add_argument('-i', '--initialmodel', default='/release_model/notexistant/', type=str) #added by Rema for loading initializing model
+parser.add_argument("-c", "--ckptpath", default='/release_model/notexistant/', type=str)
+parser.add_argument("-cn", "--ckptnumber", default='/release_model/notexistant/', type=str)
 args = parser.parse_args()
 
 
@@ -59,12 +60,13 @@ def main_worker(rank, config):
 
 
 if __name__ == "__main__":
-    os.environ["CUDA_VISIBLE_DEVICES"]="7" #added by Rema to choose only one GPU
     # loading configs
     config = json.load(open(args.config))
+    os.environ["CUDA_VISIBLE_DEVICES"]=config['gpu'] #added by Rema to choose only one GPU
     config['model'] = args.model
     config['config'] = args.config
-    config['initialmodel'] = args.initialmodel #added by Rema for loading initializing model
+    config['initialmodel'] = args.ckptpath #added by Rema for loading initializing model
+    config['chosen_epoch'] = args.ckptnumber #added by Rema for loading initializing model
 
     # setting distributed configurations
     config['world_size'] = get_world_size()
