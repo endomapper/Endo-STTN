@@ -1,11 +1,9 @@
 ''' Spatial-Temporal Transformer Networks
 '''
-import numpy as np
 import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.models as models
 from core.spectral_norm import spectral_norm as _spectral_norm
 
 

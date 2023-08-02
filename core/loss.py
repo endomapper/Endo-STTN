@@ -1,8 +1,5 @@
 import torch
-import os
 import torch.nn as nn
-import torch.nn.functional as F
-import torchvision.models as models
 
 
 class AdversarialLoss(nn.Module):

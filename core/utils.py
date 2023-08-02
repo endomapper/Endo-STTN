@@ -1,26 +1,12 @@
 import matplotlib.patches as patches
 from matplotlib.path import Path
-import os
-import sys
 import io
 import cv2
-import time
-import argparse
-import shutil
 import random
 import zipfile
-from glob import glob
-import math
 import numpy as np
-import torch.nn.functional as F
-import torchvision.transforms as transforms
-from PIL import Image, ImageOps, ImageDraw, ImageFilter
-
+from PIL import Image, ImageOps
 import torch
-import torchvision
-import torch.nn as nn
-import torch.distributed as dist
-
 import matplotlib
 from matplotlib import pyplot as plt
 matplotlib.use('agg')

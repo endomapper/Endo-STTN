@@ -26,7 +26,7 @@ parser.add_argument("-cn", "--ckptnumber", type=str, required=True)
 parser.add_argument("--model", type=str, default='sttn')
 parser.add_argument("--shifted", action='store_true')
 parser.add_argument("--overlaid", action='store_true')
-parser.add_argument("--famelimit", type=int, default=927, description="Limit the number of frames to be processed")
+parser.add_argument("--famelimit", type=int, default=927)
 parser.add_argument("--zip", action='store_true')
 parser.add_argument("-g", "--gpu", type=str, default="7", required=True)
 parser.add_argument("-d", "--Dil", type=int, default=8)
@@ -181,7 +181,7 @@ def evaluate(w, h, frames, fnames, masks, video_name, model, device, overlaid, s
                     comp_frames[idx] = comp_frames[idx].astype(
                         np.float32)*0.5 + img.astype(np.float32)*0.5
                     #Rema:
-    savebasepath=os.path.join(args.output,"gen_"+args.ckptnumber.zfill(5),video_name, overlaid, shifted, Dil)
+    savebasepath=os.path.join(args.output,"gen_"+args.ckptnumber.zfill(5),"full_video",video_name, overlaid, shifted, Dil)
     frameresultpath=os.path.join(savebasepath,"frameresult")
     pathlib.Path(frameresultpath).mkdir(parents=True, exist_ok=True)
     writer = cv2.VideoWriter(savebasepath+"/result.mp4", cv2.VideoWriter_fourcc(*"mp4v"), default_fps, (w, h))

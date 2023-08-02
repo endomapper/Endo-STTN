@@ -5,9 +5,11 @@ hyper-kvasir-transfer2-TransMask.json
 results
 checkpoints
 readme_temp.txt
-release_model/*
+release_model
+!.gitkeep
 *.swp
-old_scripts
+*-original.py
+Automatic_detection_and_Inpainting_of_specular_reflections_Othmane_2011
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

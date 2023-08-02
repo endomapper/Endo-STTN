@@ -1,22 +1,14 @@
 import os
 import cv2
-import io
-import glob
-import scipy
 import json
-import zipfile
 import random
-import collections
 import torch
-import math
 import numpy as np
 import torchvision.transforms.functional as F
 import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
-from PIL import Image, ImageFilter
-from skimage.color import rgb2gray, gray2rgb
-from core.utils import ZipReader, create_random_shape_with_random_motion
-from core.utils import Stack, ToTorchFormatTensor, GroupRandomHorizontalFlip
+from PIL import Image
+from core.utils import ZipReader
+from core.utils import Stack, ToTorchFormatTensor
 
 
 class Dataset(torch.utils.data.Dataset):

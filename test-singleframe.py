@@ -26,12 +26,10 @@ parser.add_argument("-cn", "--ckptnumber", type=str, required=True)
 parser.add_argument("--model", type=str, default='sttn')
 parser.add_argument("--shifted", action='store_true')
 parser.add_argument("--overlaid", action='store_true')
-parser.add_argument("--famelimit", type=int, default=927, description="Limit the number of frames to be processed")
+parser.add_argument("--famelimit", type=int, default=927)
 parser.add_argument("--zip", action='store_true')
 parser.add_argument("-g", "--gpu", type=str, default="7", required=True)
 parser.add_argument("-d", "--Dil", type=int, default=8)
-
-
 args = parser.parse_args()
 
 
@@ -55,27 +53,40 @@ def get_ref_index(neighbor_ids, length):
 
 # read frame-wise masks 
 def read_mask(mpath):
-    m = Image.open(mpath)
-    sz=m.size
-    m = np.array(m.convert('L'))
-    m = np.array(m > 199).astype(np.uint8) #Rema:from 0 to 199 changes to binary better
-    if args.Dil !=0:
-        m = cv2.dilate(m, cv2.getStructuringElement(
-            cv2.MORPH_ELLIPSE, (args.Dil, args.Dil)), iterations=1) #Rema:Dilate only 1 iteration
-    if args.shifted:
-        M = np.float32([[1,0,50],[0,1,0]])
-        m_T = cv2.warpAffine(m,M,sz)  
-        m_T[m!=0]=0
-        m = np.copy(m_T)
-    masks = [Image.fromarray(m*255)]
+    masks = []
+    mnames = os.listdir(mpath)
+    mnames.sort()
+    for m in mnames: 
+        m = Image.open(os.path.join(mpath, m))
+        sz=m.size
+        m = np.array(m.convert('L'))
+        m = np.array(m > 199).astype(np.uint8) #Rema:from 0 to 199 changes to binary better
+        if args.Dil !=0:
+            m = cv2.dilate(m, cv2.getStructuringElement(
+                cv2.MORPH_ELLIPSE, (args.Dil, args.Dil)), iterations=1) #Rema:Dilate only 1 iteration
+        if args.shifted:
+            M = np.float32([[1,0,50],[0,1,0]])
+            m_T = cv2.warpAffine(m,M,sz)  
+            m_T[m!=0]=0
+            m = np.copy(m_T)
+        masks.append(Image.fromarray(m*255))
     return masks
 
 
 #  read frames from video 
 def read_frames(fpath):
-    f = Image.open(fpath)
-    frames = [f]
-    return frames
+    frames = []
+    fnames = os.listdir(fpath)
+    fnames.sort()
+    for f in fnames: 
+        f = Image.open(os.path.join(fpath, f))
+#         f = f.resize((w, h), Image.NEAREST)
+#        f = np.array(f)
+#        f = np.array(f > 0).astype(np.uint8)
+#        f = cv2.dilate(f, cv2.getStructuringElement(
+#            cv2.MORPH_CROSS, (3, 3)), iterations=1)
+        frames.append(f)
+    return frames, fnames
 
 def read_frames_mask_zip(fpath):
     frames = {}
@@ -116,10 +127,6 @@ def read_frames_mask_zip(fpath):
     return frames, fnames, masks, video_names, sz
 
 def evaluate(w, h, frames, fnames, masks, video_name, model, device, overlaid, shifted, Dil):
-
-
-
-  
     video_length = len(frames)
     feats = _to_tensors(frames).unsqueeze(0)*2-1
     frames = [np.array(f).astype(np.uint8) for f in frames]
@@ -164,7 +171,7 @@ def evaluate(w, h, frames, fnames, masks, video_name, model, device, overlaid, s
                     comp_frames[idx] = comp_frames[idx].astype(
                         np.float32)*0.5 + img.astype(np.float32)*0.5
                     #Rema:
-    savebasepath=os.path.join(args.output,"gen_"+args.ckptnumber.zfill(5),video_name, overlaid, shifted, Dil)
+    savebasepath=os.path.join(args.output,"gen_"+args.ckptnumber.zfill(5),"single_frame",video_name, overlaid, shifted, Dil)
     frameresultpath=os.path.join(savebasepath,"frameresult")
     pathlib.Path(frameresultpath).mkdir(parents=True, exist_ok=True)
     # writer = cv2.VideoWriter(savebasepath+"/result.mp4", cv2.VideoWriter_fourcc(*"mp4v"), default_fps, (w, h))
@@ -181,7 +188,8 @@ def evaluate(w, h, frames, fnames, masks, video_name, model, device, overlaid, s
         cv2.imwrite(frameresultpath+f"/{fnameNew}",cv2.cvtColor(np.array(comp).astype(np.uint8), cv2.COLOR_BGR2RGB))
         # writer.write(cv2.cvtColor(np.array(comp).astype(np.uint8), cv2.COLOR_BGR2RGB))
     # writer.release()
-    print('Finish in {}'.format(savebasepath+"/result.mp4"))
+    
+
 
 def main_worker():
     overlaid="overlaid" if args.overlaid else "notoverlaid"
@@ -249,9 +257,12 @@ def main_worker():
                 masks=masks[:args.famelimit]
                 frames=frames[:args.famelimit]
                 fnames=fnames[:args.famelimit]
-                
-            for frame, mask, fname in frames, masks, fnames:
-                evaluate(w, h, [frame], fname, [mask], video_name, model, device, overlaid, shifted, Dil)
+            
+            print("Inpainting video {} with {} frames...".format(video_name, len(frames)))
+            for i in range(len(frames)):
+                frame, mask, fname = frames[i], masks[i], fnames[i]
+                evaluate(w, h, [frame], [fname], [mask], video_name, model, device, overlaid, shifted, Dil)
+     
     else:
         # prepare datset, encode all frames into deep space 
         video_name=os.path.basename(args.frame.rstrip("/"))
@@ -263,10 +274,11 @@ def main_worker():
             masks=masks[:args.famelimit]
             frames=frames[:args.famelimit]
             fnames=fnames[:args.famelimit]
-            
-        for frame, mask, fname in frames, masks, fnames:
-            evaluate(w, h, [frame], fname, [mask], video_name, model, device, overlaid, shifted, Dil)
-     
+
+        print("Inpainting video {} with {} frames...".format(video_name, len(frames)))
+        for i in range(len(frames)):
+            frame, mask, fname = frames[i], masks[i], fnames[i]
+            evaluate(w, h, [frame], [fname], [mask], video_name, model, device, overlaid, shifted, Dil)
   
 if __name__ == '__main__':
     main_worker()

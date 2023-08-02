@@ -1,0 +1,7 @@
+pillow
+tqdm
+matplotlib
+pandas
+opencv-python
+tensorboardX
+tensorboard
