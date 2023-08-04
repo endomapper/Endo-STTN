@@ -30,6 +30,9 @@ parser.add_argument("--famelimit", type=int, default=927)
 parser.add_argument("--zip", action='store_true')
 parser.add_argument("-g", "--gpu", type=str, default="7", required=True)
 parser.add_argument("-d", "--Dil", type=int, default=8)
+parser.add_argument("-r", "--readfiles", action='store_true')
+
+
 args = parser.parse_args()
 
 
@@ -88,7 +91,7 @@ def read_frames(fpath):
         frames.append(f)
     return frames, fnames
 
-def read_frames_mask_zip(fpath):
+def read_frames_mask_zip(fpath, mpath):
     frames = {}
     masks = {}
     fnames = {}
@@ -106,7 +109,7 @@ def read_frames_mask_zip(fpath):
                 fpath, video_name), zfile).convert('RGB')
             frames_v.append(img)
             m = ZipReader.imread('{}/{}.zip'.format(
-                fpath.split("JPEGImages")[0]+"Annotations", video_name), zfile).convert('RGB')
+                mpath, video_name), zfile).convert('RGB')
             sz=m.size
             m = np.array(m.convert('L'))
             m = np.array(m > 199).astype(np.uint8) #Rema:from 0 to 199 changes to binary better
@@ -219,7 +222,7 @@ def main_worker():
         file4Ex = os.path.isfile(file4)
         file5Ex = os.path.isfile(file5)
 
-        if file1Ex and file2Ex and file3Ex and file4Ex and file5Ex:
+        if file1Ex and file2Ex and file3Ex and file4Ex and file5Ex and args.readfiles:
             # start timer
             start = time.time()
             frames_v = np.load(file1, allow_pickle='TRUE').item()
@@ -238,7 +241,7 @@ def main_worker():
             print("files loaded...")
         else:
             os.makedirs(os.path.join(args.frame.split("JPEGImages")[0], 'files'), exist_ok=True)
-            frames_v, fnames_v, masks_v, video_names, sz = read_frames_mask_zip(args.frame)
+            frames_v, fnames_v, masks_v, video_names, sz = read_frames_mask_zip(args.frame, args.mask)
             np.save(file1, frames_v) 
             np.save(file2, fnames_v) 
             np.save(file3, masks_v) 
