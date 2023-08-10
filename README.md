@@ -13,10 +13,10 @@ _Medical Image Analysis Journal 2023_.
 If any part of our paper and repository is helpful to your work, please generously cite with:
 ```
 @article{daher2022temporal,
-  title={A Temporal Learning Approach to Inpainting Endoscopic Specularities and Its effect on Image Correspondence},
+  title={A Temporal Learning Approach to Inpainting Endoscopic Specularities and Its Effect on Image Correspondence},
   author={Daher, Rema and Vasconcelos, Francisco and Stoyanov, Danail},
-  journal={arXiv preprint arXiv:2203.17013},
-  year={2022}
+  journal={Medical Image Analysis},
+  year={2023}
 }
 ```
 
@@ -49,10 +49,15 @@ Since this code is based on [STTN](https://github.com/researchmm/STTN), please a
 ```
 git clone https://github.com/endomapper/Endo-STTN.git
 cd Endo-STTN/
+conda create --name sttn python=3.8.5
 pip install -r requirements.txt
 ```
 
 To install Pytorch, please refer to [Pytorch](https://pytorch.org/).
+In our experiments we use the following installation for cuda 11.1: 
+```
+pip install torch==1.10.1+cu111 torchvision==0.11.2+cu111 torchaudio==0.10.1 -f https://download.pytorch.org/whl/cu111/torch_stable.html
+``` 
 
 <!-- ---------------------------------------------- -->
 ## Dataset Preparation
@@ -77,11 +82,9 @@ For your reference, we provide our model in ([pretrained model](https://liveucla
     - --framelimit: used to set the maximum number of frames per video (Default = 927).
     - --Dil: used to set the size of the structuring element used for dilation (Default = 8). If set to 0, no dilation will be made.
 
-    >>**_NOTE_**: The testing script for shifted masked used for the paper differs slightly in the processing of the masks. For similar results like the paper use the following [masks](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucabrd0_ucl_ac_uk/ElxeqDa9yVxKuNmgmnB3jSoB09sn6AgKQ2GRJfIgZtvzVQ?e=NBbJiQ) already shifted instead of --shifted. Similarly, [quantifyResults.ipynb](./quantifyResults.ipynb) should also be eddited to use these masks and  _shifted_ should be set to False.
-
 <br />
 
-2. To test on all the test videos in your dataset, listed in your test.json (refer to [./dataset_prep/README.md](./dataset_prep/README.md)):
+2. To test on all the test videos in your dataset, listed in your test.json:
     ```
     python test.py --gpu <<INSERT GPU INDEX>> --overlaid \
     --output <<INSERT OUTPUT DIR>> \
@@ -162,14 +165,35 @@ python train.py --model sttn \
 <!-- ---------------------------------------------- -->
 ## Evaluation 
 
->>**_NOTE_**: Refer to comment in [Testing Script (1.)](#testing-script).
-
-To quantitatively evaluate results using pseudo-ground-truth:
+To quantitatively evaluate results using the pseudo-ground truth:
 1. Test all videos using [Testing Script (2.)](#testing-script) with the **--shifted** argument.
-2. Install Scikit Image: ``` pip install scikit-image==0.15.0 ```.
-3. Use [quantifyResults.ipynb](./quantifyResults.ipynb) to generate csv files containing the quantitative results.
+2. Use [quantifyResults.ipynb](./quantifyResults.ipynb) to generate csv files containing the quantitative results.
 
 
+
+## Differences With Paper
+
+1. In [Testing Script](#testing-script) and [Evaluation](#evaluation):
+
+    The testing script for shifted masks used for the paper differs slightly in the processing of the masks. For similar results like the paper use the following [masks](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucabrd0_ucl_ac_uk/ElxeqDa9yVxKuNmgmnB3jSoB09sn6AgKQ2GRJfIgZtvzVQ?e=NBbJiQ) already shifted instead of --shifted. Similarly, [quantifyResults.ipynb](./quantifyResults.ipynb) should also be eddited to use these masks and  _shifted_ should be set to False.
+
+2. In [Installation Section](#Installation):
+    
+    In the paper we used the following older versions, which could result in slightly different values: 
+    ```
+    Python 3.6.3
+    CUDA 10.1
+    requirements36.txt
+    torchvision==0.3.0
+    torch==1.1.0
+    ``` 
+
+  <br />
+
+  $\equiv$  Given these differences, tables 1 and 2 in the paper become:
+
+  ![Table1](./docs/Table1Python385.png?raw=true)
+  ![Table1](./docs/Table2Python385.png?raw=true)
 
 
 <!-- ---------------------------------------------- -->
