@@ -143,7 +143,6 @@ Once the dataset is ready, new models can be trained:
   - "frame_limit": used to set the maximum number of frames per video (Default = 927). In the paper no limit was used for training; only for testing.
   - "Dil": used to set the size of the structuring element used for dilation (Default = 8). If set to 0, no dilation will be made.
 
- <br />
 
 ### Training Script
 
@@ -173,11 +172,7 @@ To quantitatively evaluate results using the pseudo-ground truth:
 
 ## Differences With Paper
 
-1. In [Testing Script](#testing-script) and [Evaluation](#evaluation):
-
-    The testing script for shifted masks used for the paper differs slightly in the processing of the masks. For similar results like the paper use the following [masks](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucabrd0_ucl_ac_uk/ElxeqDa9yVxKuNmgmnB3jSoB09sn6AgKQ2GRJfIgZtvzVQ?e=NBbJiQ) already shifted instead of --shifted. Similarly, [quantifyResults.ipynb](./quantifyResults.ipynb) should also be eddited to use these masks and  _shifted_ should be set to False.
-
-2. In [Installation Section](#Installation):
+1. In [Installation Section](#Installation):
     
     In the paper we used the following older versions, which could result in slightly different values: 
     ```
@@ -187,6 +182,11 @@ To quantitatively evaluate results using the pseudo-ground truth:
     torchvision==0.3.0
     torch==1.1.0
     ``` 
+
+2. In [Testing Script](#testing-script) and [Evaluation](#evaluation):
+
+    The testing script for shifted masks used for the paper differs slightly in the processing of the masks. For similar results like the paper use the following [masks](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucabrd0_ucl_ac_uk/ElxeqDa9yVxKuNmgmnB3jSoB09sn6AgKQ2GRJfIgZtvzVQ?e=NBbJiQ) already shifted instead of --shifted. Similarly, [quantifyResults.ipynb](./quantifyResults.ipynb) should also be eddited to use these masks and  _shifted_ should be set to False.
+
 
   <br />
 
