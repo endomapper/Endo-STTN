@@ -10,6 +10,7 @@ release_model
 *.swp
 *-original.py
 Automatic_detection_and_Inpainting_of_specular_reflections_Othmane_2011
+Evaluation_Results
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
