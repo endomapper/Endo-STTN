@@ -1,5 +1,5 @@
 # Endo-STTN for Endoscopic Video Inpainting
-![teaser](./docs/motivation.png?raw=true)
+![teaser](./docs/Motivation2023.png?raw=true)
 
 ### [Paper](https://arxiv.org/abs/2203.17013) | [BibTex](#citation)
 

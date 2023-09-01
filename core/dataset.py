@@ -4,7 +4,6 @@ import json
 import random
 import torch
 import numpy as np
-import torchvision.transforms.functional as F
 import torchvision.transforms as transforms
 from PIL import Image
 from core.utils import ZipReader
@@ -13,7 +12,6 @@ from core.utils import Stack, ToTorchFormatTensor
 
 class Dataset(torch.utils.data.Dataset):
     def __init__(self, args: dict, split='train', debug=False):
-        self.args = args
         self.Dil=args['Dil']
         self.args = args
         self.split = split
