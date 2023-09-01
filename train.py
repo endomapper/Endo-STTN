@@ -2,7 +2,6 @@
 import os
 import json
 import argparse
-import datetime
 import numpy as np
 from shutil import copyfile
 import torch
