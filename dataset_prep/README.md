@@ -17,7 +17,7 @@ Our dataset is based on the Hyper Kvasir dataset, please also cite it if used:
 
 1. To download our dataset:
     - Download it from ([Dataset](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucabrd0_ucl_ac_uk/EoyhTw5vdQBHr8-r-Iv-XfcB5E_88GkMuEddnRVKxwfQKQ?e=XBY9Dg))
-    - Place it in folder datasets
+    - Unzip it in [datasets](./datasets/)
     - It should look like this:
 
     ```

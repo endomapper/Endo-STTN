@@ -12,7 +12,7 @@ _Medical Image Analysis Journal 2023_.
 ## Citation
 If any part of our paper and repository is helpful to your work, please generously cite with:
 ```
-@article{daher2022temporal,
+@article{daher2023temporal,
   title={A Temporal Learning Approach to Inpainting Endoscopic Specularities and Its Effect on Image Correspondence},
   author={Daher, Rema and Vasconcelos, Francisco and Stoyanov, Danail},
   journal={Medical Image Analysis},
@@ -69,7 +69,7 @@ Navigate to [./dataset_prep/README.md](./dataset_prep/README.md) for more detail
 
 The inpainted frames can be generated using pretrained models. 
 For your reference, we provide our model in ([pretrained model](https://liveuclac-my.sharepoint.com/:f:/g/personal/ucabrd0_ucl_ac_uk/ErDBwVttNuxKkWXG7nLsnQcBMxCrbWaRhpUBGEEQ_JE_ew?e=Nj4vwD)):
-- Download and unzip the file in ./release_model/
+- Download and unzip the file in [./release_model/](./release_model/)
 
 
 
@@ -88,7 +88,7 @@ For your reference, we provide our model in ([pretrained model](https://liveucla
     ```
     python test.py --gpu <<INSERT GPU INDEX>> --overlaid \
     --output <<INSERT OUTPUT DIR>> \
-    --frame <<INSERT FRAMES DIR>> \ # Folder should be called JPEGImages
+    --frame <<INSERT FRAMES DIR>> \
     --mask <<INSERT ANNOTATIONS DIR>> \
     -c <<INSERT PRETRAINED PARENT DIR>> \
     -cn <<INSERT PRETRAINED MODEL NUMBER>> \
@@ -207,7 +207,7 @@ We provide an example of visualization attention maps in ```visualization.ipynb`
 
 We provide training monitoring on losses by running: 
 ```
-tensorboard --logdir release_mode                                                    
+tensorboard --logdir release_model
 ```
 
 <!-- ---------------------------------------------- -->
