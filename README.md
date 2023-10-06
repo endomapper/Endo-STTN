@@ -1,7 +1,7 @@
 # Endo-STTN for Endoscopic Video Inpainting
 ![teaser](./docs/Motivation2023.png?raw=true)
 
-### [Paper](https://arxiv.org/abs/2203.17013) | [BibTex](#citation)
+### [Paper](https://doi.org/10.1016/j.media.2023.102994) | [BibTex](#citation)
 
 A Temporal Learning Approach to Inpainting Endoscopic Specularities and Its Effect on Image Correspondence<br>
 
