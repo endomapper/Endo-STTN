@@ -75,7 +75,7 @@ Our dataset is based on the Hyper Kvasir dataset, please also cite it if used:
     "video_id": 3509,
     "video_id": 1569} 
     - To get the specular highlight masks we rely on the following code ([Github Repo](https://github.com/jiemojiemo/some_specular_detection_and_inpainting_methods_for_endoscope_image/tree/master/Automatic_detection_and_Inpainting_of_specular_reflections_Othmane_2011)):
-      - In Matlab run ([createSpecularMasks288.m](./Automatic_detection_and_Inpainting_of_specular_reflections_Othmane_2011/createSpecularMasks288.m))
+      - In Matlab run ([createSpecularMasks288.m](./createSpecularMasks288.m))
     - zip folders:
     ```
     cd ./labeled-videos-Processed/Resized/Frames/
